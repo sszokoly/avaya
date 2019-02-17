@@ -18,7 +18,7 @@ DSTDIR Specifies the destination folder where the log files are backed up to.
        This is by default the /var/home/ftp/pub/ecsbkp folder, which will be
        created if does not yet exist when the script runs.
 FILES  Specifies the shell glob pattern of files to be backed up.
-MAXUSE Determines the maximum %% of space that can be used up on the partition
+MAXUSE Determines the maximum % of space that can be used up on the partition
        of the DSTDIR folder. The default is 90 percent.
 GZIP   Determines if the backup is to be gzip compressed or not. The default
        is 1 which means it is.
