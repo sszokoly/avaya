@@ -37,6 +37,11 @@ RATIO=4
 DEBUG=0
 ```
 
+When running this script is no longer required it is highly recommended to delete the backup files.
+Large amount of files left if certain folders will cause the CM OS/Security/XLN backup to fail. 
+Be sure to remove the correct ecs backup folder.
+
+
 # sipstatCM #
 
 This utility provides basic statistics on the number of SIP request methods and the corresponding responses found in
