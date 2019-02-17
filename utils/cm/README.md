@@ -1,3 +1,28 @@
+# backup_ecs #
+
+This script is supposed to be run in crontab and backs up the ecs logs files of Avaya Communication Manager
+to a desired destination folder. The Avaya Communication Manager by default retains the last 1000 ecs log files.
+A new ecs log file is created when the size of the file reaches 1MByte or every seconds. In a busy system when
+MST trace is configured so that it generated and writes out lot of data to the ecs log files the worst case scenario
+is that the system keeps only the last 1000 seconds of data which is often not enough. To keep a copy of a larger
+set of ecs log files configure and use this script. There is always a partition on the system where plenty of 
+disk space is available. You should edit this file with the desired parameters then add it to crontab (crontab -e)
+to run it every 10 mins or less if need to, for example in crontab:
+
+*/10 * * * * /usr/bin/python /var/home/admin/backup_ecs.py 
+
+SRCDIR Specifies the source folder where the log files are backed up from.
+       This is normally the /var/log/ecs folder where the ecs files are.
+DSTDIR Specifies the destination folder where the log files are backed up to.
+       This is by default the /var/home/ftp/pub/ecsbkp folder, which will be
+       created if does not yet exist when the script runs.
+FILES  Specifies the shell glob pattern of files to be backed up.
+MAXUSE Determines the maximum %% of space that can be used up on the partition
+       of the DSTDIR folder. The default is 90 percent.
+GZIP   Determines if the backup is to be gzip compressed or not. The default
+       is 1 which means it is.
+RATIO  Gzip compression level, 9 slowest/most compression, 0 no compression.
+
 # sipstatCM #
 
 This utility provides basic statistics on the number of SIP request methods and the corresponding responses found in
