@@ -25,6 +25,17 @@ GZIP   Determines if the backup is to be gzip compressed or not. The default
 RATIO  Gzip compression level, 9 slowest/most compression, 0 no compression.
 ```
 
+The defaults are:
+
+```
+SRCDIR='/var/log/ecs'
+DSTDIR='/var/home/ftp/pub/ecsbkp'
+FILES='20*'
+MAXUSE=90
+GZIP=1
+RATIO=4
+DEBUG=0
+```
 
 # sipstatCM #
 
