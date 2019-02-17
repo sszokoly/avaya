@@ -7,7 +7,7 @@
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2018-07-01
-## Author: szokoly@avaya.com
+## Author: szokoly@protonmail.com
 #############################################################################
 '''
 import bz2

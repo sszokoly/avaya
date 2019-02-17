@@ -4,7 +4,7 @@
 #       name of the output file, if not provided the input file name is
 #       appended with _trunc leaving the file extension intact.
 # Date: 2018-03-25
-# Author: szokoly@avaya.com
+# Author: szokoly@protonmail.com
 #############################################################################
 import os
 import sys

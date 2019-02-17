@@ -5,7 +5,7 @@
 ## Description: summarizes calls based on ASAI/CTI messages from MST files 
 ## Options: see help, -h
 ## Date: 2019-02-04
-## Author: szokoly@avaya.com
+## Author: szokoly@protonmail.com
 #############################################################################
 '''
 import os

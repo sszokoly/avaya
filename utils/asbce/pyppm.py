@@ -7,7 +7,7 @@
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2015-09-26
-## Author: szokoly@avaya.com
+## Author: szokoly@protonmail.com
 #############################################################################
 '''
 

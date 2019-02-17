@@ -6,7 +6,7 @@
 #              presented by the server to the SBCE's WebLM client keystore.
 # Options: see help, -h
 # Date: 2016-07-13
-# Author: szokoly@avaya.com
+# Author: szokoly@protonmail.com
 #############################################################################
 '''
 import M2Crypto

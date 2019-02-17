@@ -11,6 +11,7 @@
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2017-07-09
+## Author: szokoly@protonmail.com
 #############################################################################
 '''
 from binascii import unhexlify

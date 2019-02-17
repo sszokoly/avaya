@@ -8,7 +8,7 @@
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2018-08-24
-## Author: szokoly@avaya.com
+## Author: szokoly@protonmail.com
 #############################################################################
 '''
 import fileinput

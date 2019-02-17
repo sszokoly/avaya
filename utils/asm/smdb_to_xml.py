@@ -7,7 +7,7 @@
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2016-02-25
-## Author: szokoly@avaya.com
+## Author: szokoly@protonmail.com
 ##############################################################################
 '''
 import os
