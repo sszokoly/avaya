@@ -37,9 +37,9 @@ RATIO=4
 DEBUG=0
 ```
 
-When running this script is no longer required it is highly recommended to delete the backup files.
-Large amount of files left if certain folders will cause the CM OS/Security/XLN backup to fail. 
-Be sure to remove the correct ecs backup folder.
+When running this script is no longer required it is highly recommended to delete the backup files in addition
+to removing the script from crontab (crontab -r) as large amount of files left if certain folders will cause the
+CM OS/Security/XLN backup utility to fail. Be sure to remove the correct ecs backup folder.
 
 
 # sipstatCM #
