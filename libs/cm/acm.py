@@ -1,3 +1,18 @@
+"""
+Copyright 2018 Szabolcs Szokoly <szokoly@protonmail.com>
+This file is part of szokoly.
+szokoly is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+szokoly is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with szokoly.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import os
 import re
 import time
@@ -40,6 +55,7 @@ class SIPReader(object):
             self.ecs = self.getlog.next()
             self.fd = open(self.ecs)
             self.fd.seek(0, 2)
+
     def __next__(self):
         while 1:
             line = self.fd.readline()
@@ -99,15 +115,19 @@ class SIPReader(object):
                     break
                 else:
                     return ''
+
     def __iter__(self):
         return self
+
     def next(self):
         return self.__next__()
+
     @property
     def progress(self):
         if not self.follow:
             return int(100 - (len(self.logfiles) / float(self.total) * 100))
         return 100
+
     def _getaddr(self, hexip):
         try:
             return self.cache[hexip]
@@ -115,6 +135,7 @@ class SIPReader(object):
             result = self.hextoaddr(hexip)
             self.cache[hexip] = result
             return result
+
     @staticmethod
     def hextoaddr(hexip):
         """
@@ -139,6 +160,7 @@ class SIPReader(object):
         return {'srcip': srcip, 'srcport': srcport,
                 'dstip': dstip, 'dstport': dstport,
                 'proto': proto}
+
     @staticmethod
     def iterecs(logdir):
         """
@@ -170,11 +192,17 @@ class SIPReader(object):
                     pass
             yield filename
 
+
 class ECSLogs(object):
     """
+    Infinite stateful generator class which returns the ecs log files
+    in sequential order created from the initialization of the class
+    or returns the last ecs log file if no new one has been created since
+    the last yield.
     """
     T = '(\d{4})(\d{0,2})?(\d{0,2})?:?(\d{0,2})?(\d{0,2})?(\d{0,2})?'
     LOGDIR = '/var/log/ecs/'
+    
     def __init__(self, logdir=None, logfiles=None, timeframe=None):
         self.logdir = logdir or self.LOGDIR
         self.logfiles = logfiles
@@ -213,6 +241,7 @@ class ECSLogs(object):
         else:
             self.old = glob(os.path.join(self.logdir, '20*'))
             self.logs = self.old[-1:]
+
     def __next__(self, timeframe=None, logfiles=None):
         while 1:
             if self.logfiles:
@@ -233,23 +262,12 @@ class ECSLogs(object):
                     return self.log
                 except IndexError:
                     return self.log
+
     def __iter__(self):
         return self
+
     def next(self):
         return self.__next__()
-
-def strptime(date_string, format):
-    '''
-    import time
-    from datetime import datetime, timedelta
-    date_string = "May 11, 2018 11:28:11.135174"
-    format = "%b %d, %Y %H:%M:%S" or "%b %d, %Y %H:%M:%S.%f"
-    Providers microsecond
-    '''
-    dt_wo_msecs, msecs = date_string.strip().rsplit(".", 1)
-    dt = datetime(*(time.strptime(dt_wo_msecs, format.rsplit(".", 1)[0])[:6]))
-    msecs = timedelta(microseconds=int(msecs[0:6]))
-    return dt + msecs
 
 
 if __name__ == '__main__':

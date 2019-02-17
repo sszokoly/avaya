@@ -1,14 +1,24 @@
+"""
+Copyright 2018 Szabolcs Szokoly <szokoly@protonmail.com>
+This file is part of szokoly.
+szokoly is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+szokoly is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with szokoly.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from glob import glob
 from datetime import datetime
 from itertools import dropwhile
 import bz2
 import gzip
 import os
-try:
-    os.nice(19)
-except:
-    pass
-
 import re
 import time
 import logging
@@ -313,11 +323,3 @@ def splitaddr(line):
     r = '(IN|OUT): (\d+\.\d+\.\d+\.\d+):(\d+) --> (\d+\.\d+\.\d+\.\d+):(\d+) \((\D+)\)'
     mdir, srcip, srcport, dstip, dstport, proto = re.search(r, line).group(1,2,3,4,5,6)
     return mdir, srcip, srcport, dstip, dstport, proto
-    
-if __name__ == '__main__':
-    reader = TracesbcSIPReader(logfiles=['tracesbc_sip_1510164182_1510164829_1'])
-    n = '*'
-    while n:
-        n = reader.next()
-        print [''.join(n[-1])]
-    
