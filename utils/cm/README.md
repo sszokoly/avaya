@@ -44,10 +44,6 @@ CM OS/Security/XLN backup utility to fail. Be sure to remove the correct ecs bac
 
 # counter #
 
-The purpose of this script is to count the frequency of certain patterns in log files. Although it accepts any
-regex expression to match pattern(s) in the input line it was mainly intended to analyze Avaya Communication
-Manager ecs log files to count occurrences of alarms, errors, denial events, proc errors.
-
 This utility counts patterns in log files or in the lines received from stdin on a per interval basis.
 The patterns and intervals are user defined but for both predefined defaults exists. By default the last 7
 intervals are printed out. The interval is based on the slice of the timestamp, for example for a line
