@@ -9,7 +9,12 @@ set of ecs log files configure and use this script. There is always a partition 
 disk space is available. You should edit this file with the desired parameters then add it to crontab (crontab -e)
 to run it every 10 mins or less if need to, for example in crontab:
 
+### Example ###
+```
 */10 * * * * /usr/bin/python /var/home/admin/backup_ecs.py 
+```
+
+### Parameter ###
 
 ```
 SRCDIR Specifies the source folder where the log files are backed up from.
@@ -25,7 +30,7 @@ GZIP   Determines if the backup is to be gzip compressed or not. The default
 RATIO  Gzip compression level, 9 slowest/most compression, 0 no compression.
 ```
 
-The defaults are:
+### Defaults ###
 
 ```
 SRCDIR='/var/log/ecs'
@@ -50,7 +55,8 @@ The patterns and intervals are user defined but for both predefined defaults exi
 intervals are printed out. The interval is based on the slice of the timestamp, for example for a line
 starting with a timestamp in "yyyymmdd:HHMMSS...." format using only the first 11 characters, "yyyymmdd:HH",
 the intervall will be one HOUR. The pattern is a combination of a keyword, "event", and any accompaning string qualifiers. 
-For example:
+
+### Example ###
 
 ```
 "DENYEVT,(event=\d+) (d1=\S+) (d2=\S+).*]"
@@ -60,7 +66,8 @@ specifies DENYEVT as event type and a group of potentially three components defi
 expression. If input files are not provided the input is read from stdin.
 Although it accepts any  regex expression to match pattern(s) in the input line it was mainly intended to analyze
 Avaya Communication Manager ecs log files to count occurrences of alarms, errors, denial events, proc errors.
-For example:
+
+### Example ###
 
 ```
 $ python counter.py -i HOUR --ecs=denial /var/log/ecs/2017-0427-0[456]*
@@ -91,6 +98,8 @@ Adding one or more -v displays one or more regex groups. For example one -v adds
 Also changing the interval to TMIN (ten minutes) and displaying only the last 3 intervals can further 
 limits the scope of the interest.
 
+### Example ###
+
 ```
 $ python counter.py -v -i TMIN -n3 --ecs=denial /var/log/ecs/2017-0427-06*
 DENYEVT                        20170427:064  20170427:065  20170427:070
@@ -119,6 +128,8 @@ event=2292 d1=abfac59                     1
 
 And finally an example for a custom pattern.
 
+### Example ###
+
 ```
 python counter.py --timepos=0,6 -p "IPEVT,(reason=\w+)" /var/log/messages*
 IPEVT                      Dec 12  Dec 28  Jan 11  Jan 14  Jan 30  Nov  8  Nov 28
@@ -140,6 +151,8 @@ reason=timeout                                  1       1
 Extracts MST messages from MTA decoded files when pattern(s) is in the MST message.
 For example all MST messages with uid 9704 and 9b45:
 
+### Example ###
+
 ```
 python extract.py "9704|9b45" 1000_1100.m
 ```
@@ -150,6 +163,8 @@ python extract.py "9704|9b45" 1000_1100.m
 Serializes outbound ASAI DOMAIN messages from MST traces. It provides filtering capability to list only those 
 outbound ASAI messages which match the link filter and/or callid, calling/called/connected number, trunk-channel
 or ucid.
+
+### Example ###
 
 ```
 python serial_asai.py --link=4 --ucid 10000005931548338759 0905_0924.m
@@ -206,3 +221,16 @@ $ python sipstatCM.py -n100 --request='INVITE|CANCEL|BYE' --responses='4|5|6' -i
 ```
  
 
+
+# trunc #
+
+Truncate or append 0's to Call Record dump to match the size provided in the second argument, the optional third 
+argument will specify the name of the output file, if not provided the input file name is appended with _trunc 
+leaving the file extension intact. The purpose of this scrip is to work around the problems of MTA when it is
+unable to decode the Call Records due to unexpected Call Record lenght.
+
+### Example ###
+
+```
+python trunc.py 0710.M 708
+```
