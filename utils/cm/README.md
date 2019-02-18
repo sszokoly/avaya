@@ -42,6 +42,87 @@ to removing the script from crontab (crontab -r) as large amount of files left i
 CM OS/Security/XLN backup utility to fail. Be sure to remove the correct ecs backup folder.
 
 
+# counter #
+
+The purpose of this script is to count the frequency of certain patterns in log files. Although it accepts any
+regex expression to match pattern(s) in the input line it was mainly intended to analyze Avaya Communication
+Manager ecs log files to count occurrences of alarms, errors, denial events, proc errors.
+
+This utility counts patterns in log files or in the lines received from stdin on a per interval basis.
+The patterns and intervals are user defined but for both predefined defaults exists. By default the last 7
+intervals are printed out. The interval is based on the slice of the timestamp, for example for a line
+starting with a timestamp in "yyyymmdd:HHMMSS...." format using only the first 11 characters, "yyyymmdd:HH",
+the intervall will be one HOUR. The pattern is a combination of a keyword, "event", and any accompaning string qualifiers. 
+For example:
+
+```
+"DENYEVT,(event=\d+) (d1=\S+) (d2=\S+).*]"
+```
+
+specifies DENYEVT as event type and a group of potentially three components defined by a regular
+expression. If input files are not provided the input is read from stdin.
+Although it accepts any  regex expression to match pattern(s) in the input line it was mainly intended to analyze
+Avaya Communication Manager ecs log files to count occurrences of alarms, errors, denial events, proc errors.
+For example:
+
+```
+$ python counter.py -i HOUR --ecs=denial /var/log/ecs/2017-0427-0[456]*
+DENYEVT       20170427:04  20170427:05  20170427:06  20170427:07
+event=1012              1            2
+event=1097                                        1
+event=1189              1            5           48
+event=1192             21           45            2
+event=1220              2            1
+event=1375              3            2           14
+event=1378              4            7           57
+event=1617                                        2
+event=1644                                        6
+event=1725              5            3            5
+event=1934              6            6            6
+event=1942                           5
+event=2011                           3
+event=2012                           1
+event=2081              1            4
+event=2094              2            4            4
+event=2121                                        2
+event=2176             40            6
+event=2287             36          193          674            3
+event=2292              1            2            2
+```
+
+Adding one or more -v displays one or more regex groups. For example one -v adds the (d1=\S+) group.
+Also changing the interval to TMIN (ten minutes) and displaying only the last 3 intervals is also possible.
+
+```
+$ python counter.py -v -i TMIN -n3 --ecs=denial /var/log/ecs/2017-0427-06*
+DENYEVT                        20170427:064  20170427:065  20170427:070
+event=1189 d1=830001                      1             1
+event=1189 d1=830002                     11             9
+event=1189 d1=830003                      1             2
+event=1375 d1=7fc4                        1
+event=1375 d1=98f4                                      2
+event=1378 d1=6e95                                      1
+event=1378 d1=7e24                        1
+event=1378 d1=7e2c                                      1
+event=1378 d1=7e2f                                      1
+event=1378 d1=7e65                                      1
+event=1378 d1=9957                        1
+event=1644 d1=7881                                      1
+event=1644 d1=8ce3                        2
+event=1725 d1=86fe                        2
+event=1725 d1=9977                        1
+event=1934 d1=9bb9                                      1
+event=1934 d1=9d0e                        1
+event=2094 d1=10.191.172.88               1
+event=2094 d1=10.191.172.89               1
+event=2287 d1=0002                       99           193             3
+event=2292 d1=abfac59                     1
+
+```
+
+
+
+
 # sipstatCM #
 
 This utility provides basic statistics on the number of SIP request methods and the corresponding responses found in
@@ -79,3 +160,4 @@ $ python sipstatCM.py -n100 --request='INVITE|CANCEL|BYE' --responses='4|5|6' -i
  10.1.1.1<-5070->10.2.2.2                146    0   25  115    1    0    0    1    1    0
 ```
  
+
