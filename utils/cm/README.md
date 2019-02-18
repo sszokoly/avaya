@@ -42,6 +42,7 @@ to removing the script from crontab (crontab -r) as large amount of files left i
 CM OS/Security/XLN backup utility to fail. Be sure to remove the correct ecs backup folder.
 
 
+
 # counter #
 
 This utility counts patterns in log files or in the lines received from stdin on a per interval basis.
@@ -130,6 +131,39 @@ reason=normal                           1       6               1       6       
 reason=recovery                                 1
 reason=switch_request                           8       1       1       6       2
 reason=timeout                                  1       1
+```
+
+
+
+# extract #
+
+Extracts MST messages from MTA decoded files when pattern(s) is in the MST message.
+For example all MST messages with uid 9704 and 9b45:
+
+```
+python extract.py "9704|9b45" 1000_1100.m
+```
+
+
+#  serial_asai #
+
+Serializes outbound ASAI DOMAIN messages from MST traces. It provides filtering capability to list only those 
+outbound ASAI messages which match the link filter and/or callid, calling/called/connected number, trunk-channel
+or ucid.
+
+```
+python serial_asai.py --link=4 --ucid 10000005931548338759 0905_0924.m
+   Timestamp Link   Callids               Calling                Called                Connected          Trunks                                Event
+09:06:04.785    4      0251             932688962                  2420                   421322         305/130  alerting |cv alertg evnt/call state
+09:06:04.785    4      0251             932688962                  2420                   421322         305/130   connected (local answer detection)
+09:06:05.166    4      0251                                                  ##### 421322 710192         305/130
+09:06:05.167    4      0251             932688962                  2420                   710192         305/130   connected (local answer detection)
+09:09:54.166    4 0251 0f25                421322                351104             ##### 710192         305/130                     call transferred
+09:09:54.166    4 0251 0f25                421322                351104             ##### 710192         305/130                     call transferred
+09:09:55.982    4      0f25             932688962                351104                   428370         305/130  alerting |cv alertg evnt/call state
+09:09:55.984    4      0f25             932688962                351104                   428370         305/130   connected (local answer detection)
+09:09:56.350    4      0f25                                                  ##### 428370 710004         305/130
+09:09:56.350    4      0f25             932688962                351104                   710004         305/130   connected (local answer detection)
 ```
 
 
