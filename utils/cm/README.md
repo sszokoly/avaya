@@ -114,9 +114,24 @@ event=2094 d1=10.191.172.88               1
 event=2094 d1=10.191.172.89               1
 event=2287 d1=0002                       99           193             3
 event=2292 d1=abfac59                     1
+```
 
 ```
 
+Finally an example for a custom pattern.
+
+python counter.py --timepos=0,6 -p "IPEVT,(reason=\w+)" /var/log/messages*
+IPEVT                      Dec 12  Dec 28  Jan 11  Jan 14  Jan 30  Nov  8  Nov 28
+reason=0                                1       6               2
+reason=2010                     2
+reason=2012                     2                       1
+reason=endpoint_request         2       1       1       1                       4
+reason=linkUp                                                           4       1
+reason=normal                           1       6               1       6       6
+reason=recovery                                 1
+reason=switch_request                           8       1       1       6       2
+reason=timeout                                  1       1
+```
 
 
 
