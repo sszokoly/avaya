@@ -116,10 +116,9 @@ event=2287 d1=0002                       99           193             3
 event=2292 d1=abfac59                     1
 ```
 
+And finally an example for a custom pattern.
+
 ```
-
-Finally an example for a custom pattern.
-
 python counter.py --timepos=0,6 -p "IPEVT,(reason=\w+)" /var/log/messages*
 IPEVT                      Dec 12  Dec 28  Jan 11  Jan 14  Jan 30  Nov  8  Nov 28
 reason=0                                1       6               2
