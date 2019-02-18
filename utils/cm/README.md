@@ -87,7 +87,8 @@ event=2292              1            2            2
 ```
 
 Adding one or more -v displays one or more regex groups. For example one -v adds the (d1=\S+) group.
-Also changing the interval to TMIN (ten minutes) and displaying only the last 3 intervals is also possible.
+Also changing the interval to TMIN (ten minutes) and displaying only the last 3 intervals can further 
+limits the scope of the interest.
 
 ```
 $ python counter.py -v -i TMIN -n3 --ecs=denial /var/log/ecs/2017-0427-06*
