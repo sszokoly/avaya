@@ -14,7 +14,7 @@ to run it every 10 mins or less if need to, for example in crontab:
 */10 * * * * /usr/bin/python /var/home/admin/backup_ecs.py 
 ```
 
-### Parameter ###
+### Parameters ###
 
 ```
 SRCDIR Specifies the source folder where the log files are backed up from.
@@ -43,8 +43,8 @@ DEBUG=0
 ```
 
 When running this script is no longer required it is highly recommended to delete the backup files in addition
-to removing the script from crontab (crontab -r) as large amount of files left if certain folders will cause the
-CM OS/Security/XLN backup utility to fail. Be sure to remove the correct ecs backup folder.
+to removing the script from crontab (crontab -r) as large amount of files left in certain folders will cause the
+CM OS/Security/XLN backup utility to fail. Also make be to remove the correct ecs backup folder.
 
 
 
@@ -148,7 +148,7 @@ reason=timeout                                  1       1
 
 # extract #
 
-Extracts MST messages from MTA decoded files when pattern(s) is in the MST message.
+Extracts MST messages from MTA decoded files when pattern(s) is/are in the MST message.
 For example all MST messages with uid 9704 and 9b45:
 
 ### Example ###
