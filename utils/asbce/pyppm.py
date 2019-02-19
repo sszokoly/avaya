@@ -140,7 +140,7 @@ def main():
                         help='terse output, prints only a summary line per message')
     parser.add_option('-a', '--all', action='store_true', default=False, dest='printall',\
                         help='to print all messages, by default only endpoint messages are printed,\
- that is Endpoint <-> SBC')
+ that is Endpoint <-> SBC Public interface')
     parser.add_option('-v', action='store_true',\
                         help='show version number and exit.')
     parser.add_option('--expiry', action='store_true', default=False, dest='expiry',\

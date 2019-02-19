@@ -46,10 +46,9 @@ INTERVALS = {
     }
 
 DESCRIPTION = '''Calculates the maximum concurrent session counts per interval
-calculated from the SIP messages in the tracesbc_sip files. The generated 
-report is not 100% accurate due to the fact that logging may be halted 
-temporarily on a very busy system, though call processing continues 
-unaffected.'''
+from ASBCE tracesbc_sip files. The generated report may not be 100% accurate always 
+due to the fact that logging may be halted temporarily from time to time on a very 
+busy system, call processing normally continues unaffected though.'''
 
 class SIPMessage(object):
     def __init__(self, content):
@@ -414,7 +413,7 @@ def main():
         if logfiles and opts.timeframe:
             logfiles = find_tracesbc_bytime(logfiles=logfiles,
                                             timeframe=opts.timeframe)
-		if not logfiles:
+        if not logfiles:
 			print "ERROR: Found no tracesbce_sip file, exiting!"
 			return 1
     elif opts.timeframe: 
