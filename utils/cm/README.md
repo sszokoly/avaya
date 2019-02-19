@@ -224,9 +224,9 @@ $ python sipstatCM.py -n100 --request='INVITE|CANCEL|BYE' --responses='4|5|6' -i
 
 # trunc #
 
-Truncate or append 0's to Call Record dump to match the size provided in the second argument, the optional third 
-argument will specify the name of the output file, if not provided the input file name is appended with _trunc 
-leaving the file extension intact. The purpose of this scrip is to work around the problems of MTA when it is
+Truncate or append 0's to Call Record dumps in raw MST files to match the size provided in the second argument, 
+the optional third argument will specify the name of the output file, if not provided the input file name is appended 
+with _trunc leaving the file extension intact. The purpose of this scrip is to work around the problems of MTA when it is
 unable to decode the Call Records due to unexpected Call Record lenght.
 
 ### Example ###
