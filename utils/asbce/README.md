@@ -59,3 +59,32 @@ In addition it provides filtering capabilities.
                printed, that is Endpoint <-> SBC Public interface.
 ```
 
+# session_monitor #
+
+Calculates the Peak or currently  Active sessions for the chosen interval from
+tracesbc_sip or SSYNDI files using the SIP messages only. The generated report
+may not be  100% accurate. Without input files provided as argument it parses 
+one of the log file types mentioned above realtime. It updates the screen with
+the session counts only when the specified interval has ended  AND there was a
+change in session counts during that interval.
+
+### Options ###
+
+```
+Options:
+  -h, --help           show this help message and exit
+  -a, --active         to show active session counts instead of peak at update
+  -f                   to filter interface addresses, show session counts only
+                       for these IP addresses, separeted by | (pipe)
+  -i  , --interval=    to specify the sample interval, which can be SEC,
+                       TENSEC, MIN, TENMIN, HOUR or DAY, the default is MIN
+                       for realtime monitoring, otherwise HOUR
+  -n num               to parse the last "n" number of hours of trace files
+  -s, --ssyndi         to use SSYNDI instead of tracesbc_sip logs
+  -t  , --timeframe=   to parse log files for the period specified by a
+                       <start> and optional <end> date/time string as follows,
+                       yyyymmdd[:HH[MM[SS]]][-yyyymmdd[:HH[MM[SS]]]]
+                       for example: "20190308:0600-20190308:1800"
+  -v, --verbose        to show session counts for each IP address of the
+                       interfaces instead of grouping them together
+```
