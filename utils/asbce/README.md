@@ -61,11 +61,11 @@ In addition it provides filtering capabilities.
 
 # session_monitor #
 
-Calculates the Peak or currently  Active sessions for the chosen interval from
-tracesbc_sip or SSYNDI files using the SIP messages only. The generated report
+Calculates the Peak or currently  Active sessions for the chosen interval from 
+tracesbc_sip or SSYNDI files using the SIP messages only. The generated report 
 may not be  100% accurate. Without input files provided as argument it parses 
-one of the log file types mentioned above realtime. It updates the screen with
-the session counts only when the specified interval has ended  AND there was a
+one of the log file types mentioned above realtime. It updates the screen with 
+the session counts only when the specified interval has ended  AND there was a 
 change in session counts during that interval.
 
 ### Options ###
