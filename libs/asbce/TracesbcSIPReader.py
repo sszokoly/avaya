@@ -77,7 +77,7 @@ class TracesbcSIPReader(object):
                     self.fd.close()
                     self.filename = self.tracesbc_sip_logfile
                 else:
-                    return ""
+                    return None
                 self.fd = self.zopen(self.filename)
                 readaline = self.fd.readline
             elif line.startswith("["):

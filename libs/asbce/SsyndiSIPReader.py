@@ -74,7 +74,7 @@ class SsyndiSIPReader(object):
                         raise StopIteration
                 elif (os.stat(self.filename).st_size < 10482000 or
                       self.filename == self.ssyndi_logfile):
-                      return ""
+                      return None
                 else:
                     self.fd.close()
                     self.filename = self.ssyndi_logfile
