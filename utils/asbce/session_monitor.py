@@ -2,10 +2,10 @@
 '''
 #############################################################################
 ## Name: session_monitor
-## Description: Calculates the maximum (peak) concurrent sessions per 
-                interval in the Avaya SBCE parsing the tracesbc_sip messages
+## Description: Calculates the concurrent active sessions per interval from
+##              Avaya SBCE tracesbc_sip or SSYNDI log files.
 ## Options: see help, -h
-## Version: see option -v
+## Version: see help, -h
 ## Date: 2019-03-10
 ## Author: szokoly
 #############################################################################
@@ -124,6 +124,7 @@ except ImportError:
             return not self == other
 
 
+VERSION = 0.1
 INTERVALS = {
     'S' : slice(0, 15),
     'SEC' : slice(0, 15),
@@ -140,15 +141,17 @@ INTERVALS = {
     'D' : slice(0, 8),
     'DAY' : slice(0, 8),
     }
-
 LOG_DIR = "/archive/log"
 
-DESCRIPTION = '''Calculates the Peak or currently  Active sessions for the
-chosen interval from tracesbc_sip or SSYNDI files using the SIP messages only.
-The generated report may not be  100% accurate. Without input files provided 
+DESCRIPTION = '''Calculates the Peak or currently Active sessions for the
+chosen interval using the SIP messages only from tracesbc_sip or SSYNDI files.
+The generated  report may not be  100% accurate. Without input files provided 
 as argument it parses one of the log file types mentioned above realtime. It
 updates the screen with the session counts only when the specified interval
-has ended  AND there was a change in session counts during that interval.'''
+has ended  AND there was a change in the session counts during that interval
+AND if there is at least one session still active in that interval. Those
+still active sessions established prior to the intervals processed by this
+tool are NOT counted and reported.'''
 
 def memoize(func):
     """
@@ -165,234 +168,6 @@ def memoize(func):
             cache[args] = result
             return result
     return wrapper
-
-
-class SIPMessage(object):
-    def __init__(self, content):
-        self._str = str(content)
-    def getMethod(self):
-        space = self._str.find(' ')
-        if space >= 0:
-            return self._str[0:space]
-        return ''
-    def getStatusCode(self):
-        start = self._str.find(' ')
-        if start >= 0:
-            start += 1
-            end = self._str.find(' ', start)
-            return self._str[start:end]
-        return ''
-    def getStatusLine(self):
-        start = self._str.find(' ', 8)
-        if start >= 0:
-            start += 1
-            end = self._str.find("\n", start)
-            return self._str[start:end].rstrip()
-        return ''
-    def getCseqMethod(self):
-        seq, method = self.getCseq()
-        return method
-    def getCseq(self):
-        start = self._str.find('CSeq:')
-        if start < 0:
-            return ''
-        start += 6
-        end = self._str.find("\n", start)
-        l = self._str[start:end].split()
-        if len(l) == 2:
-            return int(l[0]), l[1].rstrip()
-        elif len(l) == 1:
-            return 0, l[0].rstrip()
-        return 0, ''
-    def getHeader(self, header):
-        start = self._str.find(header + ':')
-        if start < 0:
-            return ''
-        end = self._str.find("\n", start)
-        if end < 0:
-            end = len(self._str)
-        return self._str[start+len(header)+1:end].rstrip()
-    def getHeaders(self, header):
-        headers = []
-        start = self._str.find(header + ':', 0)
-        while start >= 0:
-            end = self._str.find("\n", start)
-            if end < 0:
-                end = len(self._str)
-            headers.append(self._str[start + len(header) + 1:end].strip())
-            start = self._str.find(header + ':', end + 1)
-        return headers
-    def getHeaderUri(self, header):
-        hdr = self.getHeader(header)
-        if not hdr:
-            return ''
-        start = hdr.find('<')
-        if start < 0:
-            return hdr
-        end = hdr.find('>', start)
-        return hdr[start + 1:end]
-    def getHeaderUriUser(self, header):
-        uri = self.getHeaderUri(header)
-        return self.getUserFromUri(uri)
-    def getRequestUri(self):
-        start = self._str.find(' ') + 1
-        end = self._str.find(' ', start)
-        uri = self._str[start:end]
-        end = uri.find(';')
-        if end >= 0:
-            uri = uri[:end]
-        return uri
-    def getRequestUriUser(self):
-        user = self.getRequestUri()
-        start = user.find(':')
-        if start >= 0:
-            user = user[start + 1:]
-        end = user.find('@')
-        if end >= 0:
-            user = user[0:end]
-        else:
-            end = user.find(':')
-            user = user[0:end] 
-        return user
-    def getUserFromUri(self, uri):
-        end = uri.find('@')
-        if end < 0:
-            return ''
-        start = uri.find(':') + 1
-        return uri[start:end]
-    def getHdrParam(self, header, param):
-        hdr = self.getHeader(header)
-        start = hdr.find(param)
-        if start < 0:
-            return ''
-        start += len(param)
-        if hdr[start] == '=':
-            start += 1
-        end = hdr.find(';', start)
-        if end < 0:
-            end = len(hdr)
-        if end > 0:
-            return hdr[start:end]
-        return ''
-    def getCallId(self):
-        start = self._str.find("Call-ID:")
-        if start < 0:
-            start = self._str.find("i:")
-            if start < 0:
-                return ''
-            start += 3
-        else:
-            start += 9
-        end = self._str.find("\n", start)
-        return self._str[start:end].rstrip()
-    def isIndialogRequest(self):
-        return self.getHdrParam("To", "tag") != ''
-    def isResponse(self):
-        return self._str.startswith("SIP/2.0")
-    def isRequest(self):
-        return not self.isResponse()
-    def toStringShort(self):
-        eol = self._str.find("\n")
-        return self._str[0:eol].rstrip()
-    def __contains__(self, item):
-        return item in self._str
-    def __str__(self):
-        return self._str
-
-
-class SIPSessionCounter(object):
-    
-    def __init__(self, name=None):
-        self.name = name
-        self.callids = {}
-        self.counters = defaultdict(int)
-        self.peak_counters = defaultdict(int)
-        self.peak = 0
-        self.inprogress = set()
-        self.answered = set()
-        self.ending = set()
-    
-    def update(self, sipmsg, direction=None):
-        s = SIPMessage(sipmsg)
-        direction = direction or "IN&OUT"
-        callid = s.getCallId()
-        
-        if s.isRequest():
-            method = s.getMethod()
-            if method == "INVITE":
-                if callid not in self.callids and not s.isIndialogRequest():
-                    self.callids.update({callid : direction})
-            elif method == "BYE":
-                if callid in self.callids:
-                    self.answered.discard(callid)
-                    self.ending.add(callid)
-        
-        elif s.isResponse():
-            if callid not in self.callids:
-                return
-            status = s.getStatusCode()
-            method = s.getCseqMethod()
-            if method == "INVITE":
-                if (status.startswith("1") and not s.isIndialogRequest() 
-                    and callid not in self.inprogress):
-                    direction = self.callids[callid]
-                    self.inprogress.add(callid)
-                    self.counters[direction] +=1
-                    #print "Incrementing in {0} direction: {1} callid: {2}  method: {3}  status: {4}".format(self.name, direction, callid, method, status)
-                elif status == "200" and callid not in self.answered:
-                    self.inprogress.discard(callid)
-                    self.answered.add(callid)
-                elif ((status not in ("484", )) and 
-                      (status.startswith(("3", "5", "6", "4", ))) and 
-                      (callid not in self.answered) and 
-                      (callid in self.ending or callid in self.inprogress)):
-                    direction = self.callids[callid]
-                    self.inprogress.discard(callid)
-                    self.ending.discard(callid)
-                    self.counters[direction] -=1
-                    #print "Decrementing in {0} direction: {1} callid: {2}  method: {3}  status: {4}".format(self.name, direction, callid, method, status)
-                    self.callids.pop(callid, None)
-            elif method == "BYE":
-                if status == "200" and callid in self.ending:
-                    direction = self.callids[callid]
-                    self.ending.discard(callid)
-                    self.counters[direction] -=1
-                    #print "Decrementing in {0} direction: {1} callid: {2}  method: {3}  status: {4}".format(self.name, direction, callid, method, status)
-                    self.callids.pop(callid, None)
-            elif method == "CANCEL":            
-                if status == "200" and callid in self.inprogress:
-                    self.inprogress.discard(callid)
-                    self.ending.add(callid)
-        #print self.name, self.sessions, self.callids
-        
-        current = self.sessions_sum
-        if current > self.peak:
-            self.peak = current
-            self.peak_counters = copy(self.counters)
-    
-    def reset_peak(self):
-        self.peak = self.sessions_sum
-        self.peak_counters = copy(self.counters)
-    
-    def clear(self):
-        self.counters.clear()
-        self.reset_peak()
-    
-    @property
-    def sessions(self):
-        return dict(self.counters)
-    
-    @property
-    def peak_sessions(self):
-        return dict(self.peak_counters)
-        
-    @property
-    def sessions_sum(self):
-        return sum(self.counters.values())
-        
-    @property
-    def peak_sessions_sum(self):
-        return sum(self.peak_counters.values())
 
 
 class TracesbcSIPReader(object):
@@ -501,6 +276,8 @@ class TracesbcSIPReader(object):
 class SsyndiSIPReader(object):
     """
     Generator class to extract CALL CONTROL SIP messages from SSYNDI logs.
+    For this type of messages to be logged debugging must be enabled for
+    the process SSYNDI and Subsystem LOG_SUB_SIPCC.
     """
     
     LOGDIR = "/usr/local/ipcs/log/ss/logfiles/elog/SSYNDI"
@@ -618,6 +395,204 @@ class SsyndiSIPReader(object):
         return sipmsg[start:start+3].upper()
 
 
+class SIPSessionCounter(object):
+    """
+    This class keeps track of the concurrent active and peak SIP 
+    sessions by parsing SIP messages received through the update 
+    method. It is connection or host neutral, that is it doesn't
+    care or know about the origin or destination of the message. 
+    Consumers should make sure SIP messages sent to an instance
+    of this class belong to the same group of connections they
+    desire to track. For example messages sent to or received 
+    from the same local interface, or same local or remote host 
+    address or service port.
+    """
+    
+    def __init__(self, name=None, counters=None, peak_counters=None):
+        self.name = name or "SessionCounter"
+        self.counters = counters or defaultdict(int)
+        self.peak_counters = peak_counters or defaultdict(int)
+        self._callids = {}
+        self._established = set()
+    
+    def update(self, sipmsg, direction=None):
+        """
+        Receives a SIP message and returns 1 if a change has
+        occurred in the counters otherwise 0.
+        """
+        
+        rv = 0
+        direction = direction or "IN&OUT"
+        callid = self.get_callid(sipmsg)
+        
+        if not self.is_response(sipmsg):
+            return rv
+        
+        statuscode = self.get_statuscode(sipmsg)
+        cseq, method = self.get_cseq(sipmsg)
+        
+        if method == "INVITE":
+            if statuscode == "100" and not self.is_indialog(sipmsg):
+                if callid not in self._callids:
+                    direction = self.reverse_direction(direction)
+                    self._callids[callid] = {"direction": direction,
+                                             "cseqs": set([cseq])}
+                    self.counters[direction] +=1
+                    rv = 1
+                else:
+                    direction = self._callids[callid]["direction"]
+                    self._callids[callid]["cseqs"].add(cseq)
+            elif (statuscode == "200" and callid in self._callids and
+                  callid not in self._established):
+                self._established.add(callid)
+            elif (statuscode.startswith(("3", "4", "5", "6")) and
+                  callid in self._callids and
+                  callid not in self._established):
+                self._callids[callid]["cseqs"].discard(cseq)
+                if not self._callids[callid]["cseqs"]:
+                    direction = self._callids[callid]["direction"]
+                    self._callids.pop(callid, None)
+                    self.counters[direction] -=1
+                    rv = 1
+        
+        elif method == "BYE":
+            if callid in self._established:
+                direction = self._callids[callid]["direction"]
+                self._established.discard(callid)
+                self._callids.pop(callid, None)
+                self.counters[direction] -=1
+                rv = 1
+        
+        current = self.sessions_sum
+        if self.sessions_sum > self.peak_sessions_sum:
+            self.peak_counters = copy(self.counters)
+        
+        return rv
+    
+    def reset_peak(self):
+        self.peak = self.sessions_sum
+        self.peak_counters = copy(self.counters)
+    
+    def clear(self):
+        self.counters.clear()
+        self.reset_peak()
+    
+    def __add__(self, other):
+        if type(self) != type(other):
+            raise TypeError("can only add SIPSessionCounter to another")
+        new_name = "&".join((self.name, other.name))
+        new_counters = defaultdict(int)
+        new_peak_counters = defaultdict(int)
+        for d in self.counters, other.counters:
+            for k,v in d.items():
+                new_counters[k] += v
+        for d in self.peak_counters, other.peak_counters:
+            for k,v in d.items():
+                new_peak_counters[k] += v
+        return SIPSessionCounter(name=new_name, counters=new_counters,
+                                 peak_counters=new_peak_counters)
+    
+    def __str__(self):
+        return "{0} {1}  Current: {2}  Peak: {3}".format(
+            self.__class__.__name__,
+            self.name,
+            self.sessions_sum,
+            self.peak_sessions_sum)
+    
+    @property
+    def sessions(self):
+        return dict(self.counters)
+    
+    @property
+    def peak_sessions(self):
+        return dict(self.peak_counters)
+    
+    @property
+    def sessions_sum(self):
+        return sum(self.counters.values())
+    
+    @property
+    def peak_sessions_sum(self):
+        return sum(self.peak_counters.values())
+    
+    @staticmethod
+    def reverse_direction(direction):
+        if direction == "IN&OUT":
+            return direction
+        return "IN" if direction == "OUT" else "IN"
+    
+    @staticmethod
+    def get_callid(sipmsg):
+        start = sipmsg.find("Call-ID:")
+        if start == -1:
+            start = sipmsg.find("i:")
+            if start == -1:
+                return ""
+            start += 3
+        else:
+            start += 9
+        end = sipmsg.find("\n", start)
+        if end == -1:
+            end = None
+        return sipmsg[start:end].rstrip()
+    
+    @staticmethod
+    def get_cseq(sipmsg):
+        start = sipmsg.find("CSeq:")
+        if start == -1:
+            return -1, ""
+        start += 6
+        end = sipmsg.find("\n", start)
+        if end == -1:
+            end = None
+        l = sipmsg[start:end].split()
+        if len(l) == 2:
+            return int(l[0]), l[1].rstrip()
+        elif len(l) == 1:
+            return 0, l[0].rstrip()
+        return -1, ""
+    
+    @staticmethod
+    def get_method(sipmsg):
+        end = sipmsg.find(" ")
+        if space > -1:
+            return sipmsg[:end]
+        return ""
+    
+    @staticmethod
+    def get_statuscode(sipmsg):
+        start = sipmsg.find(" ")
+        if start > -1:
+            start += 1
+            end = sipmsg.find(" ", start)
+            return sipmsg[start:end]
+        return ""
+    
+    @staticmethod
+    def is_indialog(sipmsg):
+        start = sipmsg.find("To:")
+        if start == -1:
+            start = sipmsg.find("t:")
+            if start == -1:
+                return None
+        end = sipmsg.find("\n", start)
+        if end == -1:
+            end = None
+        header = sipmsg[start:end]
+        start = header.find("tag")
+        if start == -1:
+            return False
+        return True
+    
+    @staticmethod
+    def is_response(sipmsg):
+        return sipmsg.startswith("SIP/2.0")
+    
+    @staticmethod
+    def is_request(sipmsg):
+        return not self.is_response(sipmsg)
+
+
 def get_interface_addresses():
     try:
         from netifaces import interfaces, ifaddresses, AF_INET
@@ -629,7 +604,6 @@ def get_interface_addresses():
         return dict(ipaddresses)
     except:
         return {}
-
 
 def find_tracesbc_bytime(logfiles=None, timeframe="", type="sip"):
     logdir = "/archive/log/tracesbc/tracesbc_%s" % type
@@ -674,7 +648,6 @@ def find_tracesbc_bytime(logfiles=None, timeframe="", type="sip"):
     else:
         last_index = len(logfiles)
     return logfiles[first_index:last_index]
-
 
 def find_ssyndi_bytime(timeframe=""):
     logdir = "/usr/local/ipcs/log/ss/logfiles/elog/SSYNDI"
@@ -723,11 +696,10 @@ def find_ssyndi_bytime(timeframe=""):
         first_index -= 1
     return logfiles[first_index:last_index]
 
-
 def session_counter_printer(interval, session_counters, header=0, 
                             active=False, debug=False):
     if not sum(x.peak_sessions_sum for x in session_counters):
-        return False
+        return 0
     total = 0
     column_width = 16
     left_margin = 16
@@ -737,7 +709,7 @@ def session_counter_printer(interval, session_counters, header=0,
     values = [interval.ljust(left_margin)]
     for sc in session_counters:
         c = sc.peak_sessions if not active else sc.sessions
-        names.append(sc.name.center(column_width))
+        names.append(sc.name.rjust(column_width))
         if not c:
             directions.append("".ljust(left_margin))
             values.append("".center(left_margin))
@@ -763,8 +735,7 @@ def session_counter_printer(interval, session_counters, header=0,
     if debug:
         logging.info("{0}".format(output))
     print output
-    return True
-
+    return 1
 
 def itersessions(interval_slice, logfiles=None, sigfilter=None,
                  ssyndi=False, verbose=False, active=False, debug=False):
@@ -782,12 +753,17 @@ def itersessions(interval_slice, logfiles=None, sigfilter=None,
     while True:
         try:
             data = reader.next()
+            
             if not data:
                 time.sleep(0.1)
                 continue
+            
             sipmsg = data["sipmsg"]
+            if (not sipmsg.startswith("SIP/2.0") or 
+                not get_cseqmethod(sipmsg).startswith(("INVITE", "BYE"))):
+                continue
+            
             direction = data["direction"]
-            timestamp = data["timestamp"].strftime("%Y%m%d:%H%M%S%f")
             name = data["dstip"] if direction == "IN" else data["srcip"]
             if sigfilter and name not in sigfilter:
                 continue
@@ -796,6 +772,8 @@ def itersessions(interval_slice, logfiles=None, sigfilter=None,
             if name not in names:
                 names.add(name)
                 rows = max_rows
+            
+            timestamp = data["timestamp"].strftime("%Y%m%d:%H%M%S%f")
             item_interval = timestamp[interval_slice]
             if not interval:
                 interval = item_interval
@@ -808,29 +786,35 @@ def itersessions(interval_slice, logfiles=None, sigfilter=None,
                 for counter in counters.values():
                     counter.reset_peak()
                 interval = item_interval
+            
             counters.setdefault(name, SIPSessionCounter(name)).update(sipmsg,
-                                                                    direction)
+                                                                   direction)
+        
         except StopIteration:
             session_counter_printer(interval, counters.values(),
                                     header=not rows%max_rows,
                                     active=active, debug=debug)
             return 0
 
+def get_cseqmethod(sipmsg):
+    start = sipmsg.find("CSeq:")
+    if start == -1:
+        return ""
+    start += 6
+    end = sipmsg.find("\n", start)
+    if end == -1:
+        end = None
+    l = sipmsg[start:end].split()
+    if len(l) == 2:
+        return l[1].rstrip()
+    elif len(l) == 1:
+        return l[0].rstrip()
+    return ""
 
-def zopen(filename, mode="r"):
-    if filename.endswith(".gz"):
-        fd = gzip.open(filename, mode)
-    elif filename.endswith(".bz2"):
-        fd = bz2.BZ2File(filename, mode)
-    else:
-        fd = open(filename, mode)
-    return fd
-
-
-def main(log_dir):
+def main():
     parser = OptionParser(
         usage='%prog [<options>] [tracesbce_sip or SSYINDI files]',
-        description=DESCRIPTION)
+        description="\n".join((DESCRIPTION, "version: " + str(VERSION))))
     parser.add_option('-a', '--active',
         action='store_true',
         default=False,
@@ -869,7 +853,9 @@ def main(log_dir):
         default=False,
         dest='ssyndi',
         metavar=' ',
-        help='to use SSYNDI instead of tracesbc_sip logs')
+        help='to use SSYNDI instead of tracesbc_sip logs. This\
+              requires debugging enabled for LOG_SUB_SIPCC Subsystem\
+              for SSYNDI process')
     parser.add_option('-t', '--timeframe',
         action='store',
         default=False,
@@ -888,7 +874,7 @@ def main(log_dir):
               interfaces instead of grouping them together')
     opts, args = parser.parse_args()
     logfiles = []
-    is_sbce = os.path.exists("/archive/log/tracesbc/tracesbc_sip")
+    is_sbce = os.path.exists("/archive/log")
     
     if not args and not is_sbce:
         print "No trace files provided."
@@ -927,6 +913,7 @@ def main(log_dir):
         sigfilter = []
     
     if opts.debug:
+        log_dir = LOG_DIR
         if not is_sbce:
             log_dir = "./"
         debug_file = os.path.join(log_dir, "session_monitor")
@@ -940,6 +927,6 @@ def main(log_dir):
 
 if __name__ == "__main__":
     try:
-        sys.exit(main(LOG_DIR))
+        sys.exit(main())
     except KeyboardInterrupt:
         sys.exit(1)
