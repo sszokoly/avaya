@@ -10,55 +10,6 @@ that WebLM server provided there are available ASBCE licesense on it.
 python import_weblmca.py --alias=new_weblm weblmserver.example.com:52233
 ```
 
-
-# max_sessions #
-
-Calculates the maximum concurrent session counts per interval from the ASBCE tracesbc_sip files.
-
-### Options ###
-```
-  -i  , --interval=    specifies the sample interval, which can be SEC,
-                       TENSEC, MIN, TENMIN HOUR or DAY, the default is HOUR.
-  -t  , --timeframe=   parses the tracesbc_sip logs for this period.
-                       the format is YYYYmmdd:HHMM-[YYYYmmdd:HHMM]
-                       example: "20171108:1600-20171108:1800"
-```
-                    
-### Example ###
-```
-python max_sessions.py /archive/log/tracesbc/tracesbc_sip_1510*
-```
-
-Or if you want to see the session_counts for a specific period, here between
-2019-02-10 08:00 and 2019-02-10 18:00 then use the -t option.
-
-### Example ###
-```
-python max_sessions.py -t "20190210:0800-20190210:1800"
-```
-
-### Note ###
-
-The generated report may not be 100% accurate always due to the fact that logging may be halted 
-temporarily from time to time on a very  busy system, call processing normally continues unaffected though.
-
-
-
-# pyppm #
-
-This tool parses ASBCE PPM log file, tracesbc_ppm, displays the content in a somewhat prettyfied format.
-In addition it provides filtering capabilities.
-
-### Options ###
-
-```
-  -u <handle>  to filter messages related to the given user handle only, for
-               example for user handle "1021@example.com" use "-u 1021"
-  -t           terse output, prints only a summary line per message
-  -a, --all    to print all messages, by default only endpoint messages are
-               printed, that is Endpoint <-> SBC Public interface.
-```
-
 # session_monitor #
 
 Calculates the Peak or currently  Active sessions for the chosen interval 
@@ -110,4 +61,52 @@ Peak sessions     172.27.5.131    172.27.0.121    10.32.76.86        Total
 20190227:1841          0       1       0      37      37       0        75
 20190227:1842          0       0       0      40      40       0        80
 20190227:1843          0       0       0      37      37       0        74
+```
+
+
+# sipstatSBC #
+
+This utility can parse trace logs of Avaya Communication Manager or Avaya
+Session Border Controller for Enterprise for the purpose of providing a simply
+summary of the number of SIP requests and responses seen on a per second, ten
+seconds, minute, ten minutes or hourly basis. It parses CM "ecs" or SBCE
+"tracesbc_sip" files. Without input log files it runs in monitor mode until a
+user interrupt, CTRL^C, is received. It is assumed that MST was set up for at
+least one SIP signaling-group and it is running in this mode. The type of SIP
+methods and responses to monitor and count can be defined as arguments.
+
+
+```
+Options:
+  -h, --help          show this help message and exit
+  --requests=         SIP request types to monitor and count.
+                      default: "INVITE|ReINVITE|BYE|CANCEL",
+                      alternatively "ALL".
+  --responses=        SIP response types to monitor and count.
+                      default: "4|5|6", for example: "182|480|5",
+                      only reponses for the DEFAULT_METHODS specified
+                      in "--requests" or by its default will be counted.
+  -i  , --interval=   sampling interval size, can be SEC, TENSEC, MIN, TENMIN
+                      HOUR or DAY, default MIN,counters are zeroed at the end
+                      of the interval.
+  -n <number>         parse the last "n" number of tracesbc_sip files.
+  -t <start>-<end>    start/end timestamps of the period to be processed,
+                      in "YYYY[mmdd:HHMMSS]" format for example for example
+                      "20170731:1630-20170731:1659" or "20170730-20170731"
+  -v, --version       print version info.
+```
+
+```
+$ python sipstatSBC.py ../../../../../VMs/tracesbc_sip_1551306441_1551307399_1 -iH --requests="BYE|INVITE"
+20190227:18                                INVITE     BYE       403       407       487       491       500       504
+                                          IN  OUT   IN  OUT   IN  OUT   IN  OUT   IN  OUT   IN  OUT   IN  OUT   IN  OUT
+     10.32.76.86<-5060->10.32.75.9       111    5  106   22    0    0    0    0    1    0    0    0    1    0    0    0
+     10.32.76.90<-5060->10.32.75.11       11   35   18   19    0    0    0    0    9    0    0    0    0    0    0    0
+    172.27.0.121<-5060->172.27.0.100       5  111   22  106    0    0    0    0    0    1    0    2    0    1    0    0
+    172.27.5.102<-5071->172.27.0.100      35   11   20   18    0    0    0    0    0    9    0    0    0    0    0    0
+    172.27.5.122<-5083->172.27.0.100      46    7   38   10    0    0    0    0    0    2    0    0    0    0    0    0
+    172.27.5.131<-5061->172.27.0.100       2   10    0    4    1    2    1    0    3    0    0    0    1    0    1    0
+    172.27.5.146<-5060->24.50.205.147      0    2    0    0    2    0    0    0    0    0    0    0    0    0    0    0
+    172.27.5.146<-5061->166.172.186.54    10    0    4    0    0    1    0    1    0    3    0    0    0    1    0    0
+    172.29.15.58<-5060->172.29.2.11        7   46   10   38    0    0    0    0    2    0    0    0    0    0    0    0
 ```

@@ -345,68 +345,6 @@ class SIPStats(object):
         output.append('')
         return '\n'.join(output)
 
-class SIPStats2(object):
-    """
-    Count SIP message types and stores them in the "self.data" dictionary
-    grouped my communication link and message direction.
-    """
-    def __init__(self, methods=DEFAULT_REQUESTS, responses=DEFAULT_RESPONSES):
-        self.data = {}
-        self.methodsOfIntertest = set(methods)
-        self.reInterest = re.compile(r'(%s)' % '|'.join(methods + responses))
-    def add(self, srcip, srcport, dstip, dstport, lines, msgdir):
-        cseqline = next(x for x in lines if x.startswith('CSeq'))
-        cseqno, method = cseqline.split()[1:3]
-        if lines[0].startswith('SIP'): 
-            msgtype = lines[0].split(' ', 2)[1]
-            trk = (srcip, srcport, dstip)
-        else:
-            msgtype = lines[0].split(' ', 1)[0]
-            trk = (dstip, dstport, srcip)
-            if msgtype == 'INVITE': 
-                toline = next(x for x in lines if x.startswith('To'))
-                if 'tag=' in toline:
-                    msgtype = 'ReINVITE'
-        if method in self.methodsOfIntertest and self.reInterest.match(msgtype):
-            self.data.setdefault(trk, {}).setdefault(msgdir, {}).setdefault(msgtype, count(0)).next()
-    def clear(self):
-        self.data = {}
-    def __str__(self):
-        c = set()
-        t = {}
-        output = []
-        for trkset, val in self.data.iteritems():
-            trunk_ipaddr_port = sorted(list(trkset))
-            ip1 = trunk_ipaddr_port[0].rjust(15)
-            ip2 = trunk_ipaddr_port[1].ljust(15)
-            port = trunk_ipaddr_port[2].center(6, '-')
-            trk = '%s<%s>%s' % (ip1, port, ip2)
-            t[trk] = trkset
-            #print val
-            for d in val.values():
-                #print d
-                c.update(d.keys())
-        #print c
-        requests = [x for x in list(c) if not x.isdigit()]
-        responses = [x for x in list(c) if x.isdigit()]
-        requests = sorted(requests, key=lambda r: SORT_ORDER.get(r, 16))
-        col = requests + sorted(responses)
-        columns = ''.join(x.center(10) for x in col)
-        output.append(columns)
-        subcolumns = len(col) * ''.join(('IN'.rjust(5), 'OUT'.rjust(5)))
-        output.append(''.join((''.rjust(39), subcolumns)))
-        for trk in sorted(list(t)):
-            l = []
-            l.append(trk.rjust(39))
-            for header in col:
-                IN = self.data[t[trk]].get('IN', {}).get(header, count(0))
-                OUT = self.data[t[trk]].get('OUT', {}).get(header, count(0))
-                l.append(str(next(IN)))
-                l.append(str(next(OUT)))
-            output.append(''.join(c.rjust(5) for c in l))
-        output.append('')
-        return '\n'.join(output)
-
 
 def tracesbc_sip_logs(logfiles=None, timeframe=''):
     filename_pattern = r'tracesbc_sip_[1-9][0-9][0-9][0-9]*'
@@ -506,8 +444,9 @@ def main():
         default=False,
         dest='interval',
         metavar=' ',
-        help='sampling interval size, can be SEC, TENSEC, MIN, TENMIN, HOUR or\
-         DAY, default MIN,counters are zeroed at the end of the interval.')
+        help='sampling interval size, can be SEC, TENSEC, MIN, TENMIN\
+              HOUR or DAY, default MIN,counters are zeroed at the end\
+              of the interval.')
     parser.add_option('-n',
         action='store',
         default=False,
@@ -566,7 +505,6 @@ def main():
         if not logfiles:
             print 'ERROR: Found no ecs log files!'
             return 2
-    print logfiles
     reader = TracesbcSIPReader(logfiles)
     stats = SIPStats(requests, responses)
     window = ''
