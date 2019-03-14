@@ -61,12 +61,12 @@ In addition it provides filtering capabilities.
 
 # session_monitor #
 
-Calculates the Peak or currently  Active sessions for the chosen interval from 
-tracesbc_sip or SSYNDI files using the SIP messages only. The generated report 
-may not be  100% accurate. Without input files provided as argument it parses 
-one of the log file types mentioned above realtime. It updates the screen with 
-the session counts only when the specified interval has ended  AND there was a 
-change in session counts during that interval.
+Calculates the Peak or currently  Active sessions for the chosen interval 
+from tracesbc_sip or SSYNDI files using the SIP messages only. The 
+generated report may not be  100% accurate. Without input files provided 
+as argument it parses one of the log file types mentioned above realtime. It 
+updates the screen with the session counts only when the specified interval 
+has ended  AND there was a change in session counts during that interval.
 
 ### Options ###
 
@@ -87,4 +87,27 @@ Options:
                        for example: "20190308:0600-20190308:1800"
   -v, --verbose        to show session counts for each IP address of the
                        interfaces instead of grouping them together
+```
+
+```
+$ python session_monitor.py -imin tracesbc_sip_1551306441_1551307399_1 -f "172.27.5.131|172.27.0.121|10.32.76.86"
+Peak sessions     172.27.5.131    172.27.0.121    10.32.76.86        Total
+                                      IN     OUT      IN     OUT
+20190227:1827                          0       1       1       0         2
+20190227:1828                          0       4       4       0         8
+20190227:1829                          0       9       9       0        18
+20190227:1830                          0      17      17       0        34
+20190227:1831          0       1       0      19      19       0        39
+20190227:1832          0       1       0      18      18       0        37
+20190227:1833          0       1       1      16      16       1        35
+20190227:1834          0       1       0      19      19       0        39
+20190227:1835          0       0       0      27      27       0        54
+20190227:1836          0       1       1      35      35       1        73
+20190227:1837          0       1       1      37      37       1        77
+20190227:1838          0       0       0      38      38       0        76
+20190227:1839          0       0       0      39      39       0        78
+20190227:1840          1       1       0      37      37       0        76
+20190227:1841          0       1       0      37      37       0        75
+20190227:1842          0       0       0      40      40       0        80
+20190227:1843          0       0       0      37      37       0        74
 ```
