@@ -41,8 +41,8 @@ Options:
 ```
 
 ```
-$ python session_monitor.py -imin tracesbc_sip_1551306441_1551307399_1 -f "172.27.5.131|172.27.0.121|10.32.76.86"
-Peak sessions     172.27.5.131    172.27.0.121    10.32.76.86        Total
+$ python session_monitor.py -imin tracesbc_sip_1551306441_1551307399_1 -f "172.16.5.131|172.16.0.121|10.10.76.86"
+Peak sessions     172.16.5.131    172.16.0.121    10.10.76.86        Total
                                       IN     OUT      IN     OUT
 20190227:1827                          0       1       1       0         2
 20190227:1828                          0       4       4       0         8
