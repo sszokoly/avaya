@@ -88,7 +88,7 @@ class SsyndiSIPReader(object):
                     lines.append(readaline())
                 d = self.splitaddr(lines[-1])
                 ts = lines[0][1:27].replace(" ", "0")
-                d["timestamp"] = datetime.strptime(ts, "%m-%d-%Y:%H.%M.%S.%f")
+                d["timestamp"] = self.strptime(lines[0][1:27])
                 d["direction"] = lines[0][-5:-2].lstrip()
                 d["sipmsg"] = "".join(lines[1:-1])
                 d["proto"] = self.get_proto(d["sipmsg"])
@@ -156,6 +156,16 @@ class SsyndiSIPReader(object):
         else:
             start += 13
         return sipmsg[start:start+3].upper()
+    
+    @staticmethod
+    def strptime(s):
+        """
+        Returns a datetime object from an ASBCE's timestamp string.
+        This is 6 times faster than the datetime.strptime() method.
+        """
+        return datetime(int(s[6:10]),  int(s[0:2]),   int(s[3:5]),
+                        int(s[11:13]), int(s[14:16]), int(s[17:19]),
+                        int(s[20:26]))
 
 
 class TracesbcSIPReader(object):
@@ -206,8 +216,7 @@ class TracesbcSIPReader(object):
                 while not lines[-1].startswith("--"):
                     lines.append(readaline().lstrip("\r\n"))
                 d = self.splitaddr(lines[1])
-                ts = lines[0][1:-3].replace(" ", "0")
-                d["timestamp"] = datetime.strptime(ts, "%m-%d-%Y:%H.%M.%S.%f")
+                d["timestamp"] = self.strptime(lines[0][1:-3])
                 d["sipmsg"] = "".join(x for x in lines[2:-1] if x)
                 return d
     
@@ -247,6 +256,16 @@ class TracesbcSIPReader(object):
             return dict((k,v) for k,v in zip(keys, m.groups()))
         except:
             return dict((k, None) for k in keys)
+    
+    @staticmethod
+    def strptime(s):
+        """
+        Returns a datetime object from an ASBCE's timestamp string.
+        This is 6 times faster than the datetime.strptime() method.
+        """
+        return datetime(int(s[6:10]),  int(s[0:2]),   int(s[3:5]),
+                        int(s[11:13]), int(s[14:16]), int(s[17:19]),
+                        int(s[20:26]))
     
     @staticmethod
     def zopen(filename):
