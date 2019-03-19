@@ -87,7 +87,6 @@ class SsyndiSIPReader(object):
                 while not lines[-1].startswith("IP:"):
                     lines.append(readaline())
                 d = self.splitaddr(lines[-1])
-                ts = lines[0][1:27].replace(" ", "0")
                 d["timestamp"] = self.strptime(lines[0][1:27])
                 d["direction"] = lines[0][-5:-2].lstrip()
                 d["sipmsg"] = "".join(lines[1:-1])
