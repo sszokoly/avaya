@@ -106,3 +106,20 @@ $ python sipstatSBC.py ../../../../../VMs/tracesbc_sip_1551306441_1551307399_1 -
     172.27.5.146<-5061->166.172.186.54    10    0    4    0    0    1    0    1    0    3    0    0    0    1    0    0
     172.29.15.58<-5060->172.29.2.11        7   46   10   38    0    0    0    0    2    0    0    0    0    0    0    0
 ```
+
+
+# pycapSBC #
+
+This utility can monitor SIP calls in Avaya Session Border Controller for Enterprise displaying
+VoIP resource information of the caller and callee side in addition to other details. With a
+simple button press it starts capturing the RTP and RTCP packets for a selected call or right
+away when a call gets established for up to 2 (by default) simultaneous calls. It can also
+show the RTP statistics, RTCP summary and any captured RFC2833 telephony events (DTMF payload)
+for capture calls.
+
+*Note: the current version works on ASBCE version 6.3, 7.0, 7.1 only. Work is in progress to
+refactor, redesign and update this tool for newer ASBCE releases.
+
+![alt text](./pycapSBC.jpg?raw=true "Dashboard")
+
+![alt text](./pycapSBC2.jpg?raw=true "RTP stats")

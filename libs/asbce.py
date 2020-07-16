@@ -1,18 +1,5 @@
-"""
-Copyright 2018 Szabolcs Szokoly <szokoly@protonmail.com>
-This file is part of szokoly.
-szokoly is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-szokoly is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-You should have received a copy of the GNU General Public License
-along with szokoly.  If not, see <http://www.gnu.org/licenses/>.
-"""
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import bz2
 import gzip
 import os
@@ -23,10 +10,15 @@ from textwrap import wrap
 from datetime import datetime
 
 def memoize(func):
-    """
-    A decorator to cache the return value of 'func' for a given
-    input 'args' in a dictionary and returns the cached value if
-    available when called with the same input again.
+    """A decorator to cache the return value of 'func' for a given
+    input in a dictionary and returns the cached value if
+    'func' is called with the same input arguments.
+
+    Args:
+        func: function to wrap with decorator
+
+    Returns:
+        wrapper: decorated function
     """
     cache = {}
     def wrapper(*args):
@@ -39,16 +31,36 @@ def memoize(func):
     return wrapper
 
 class SsyndiSIPReader(object):
+    """Generator class which parses SSYNDI log files, extracts CALL CONTROL
+    type SIP messages and yields the SIP message body with corresponding
+    host IP addresses, ports, message direction and timestamp in a
+    dictionary.
     """
-    Generator class to extract CALL CONTROL SIP messages from SSYNDI logs.
-    """
-    
     LOGDIR = "/usr/local/ipcs/log/ss/logifles/elog/SSYNDI"
     SSYNDI_GLOB = "SSYNDI_*_ELOG_*"
-    
+    ADDRLINE = "IP:([a-fx0-9.]*):(\d+) --> ([a-fx0-9.]*):(\d+)"
+
     def __init__(self, logfiles=None, logdir=None):
+        """Initializes a SsyndiSIPReader instance.
+
+        Args:
+            logfiles (list(str), optional): a collection of SSYNDI log files
+                to parse, if not provided it starts reading the latest SSYNDI
+                log in LOGDIR and keep doing it so when the log file rotates
+            logdir (str): path to directory if SSYNDI logs are not under the
+                default LOGDIR folder
+
+        Returns:
+            obj (SsyndiSIPReader): a SsyndiSIPReader class instance
+
+        Raises:
+            StopIteration: when logfiles is not None and reached the end
+                of the last logfile
+        """
         self.logdir = logdir or self.LOGDIR
-        self.ssyndi_glob = os.path.join(self.LOGDIR, self.SSYNDI_GLOB)
+        self.ssyndi_glob = os.path.join(self.logdir, self.SSYNDI_GLOB)
+        self.reIPs = re.compile(self.ADDRLINE)
+
         if logfiles:
             self.logfiles = logfiles
             self.total_logfiles = len(logfiles)
@@ -59,11 +71,12 @@ class SsyndiSIPReader(object):
             self.fd = open(self.filename)
         else:
             self.total_logfiles = 0
-            self.filename = self.ssyndi_logfile
+            self.filename = self.last_ssyndi()
             self.fd = open(self.filename)
             self.fd.seek(0, 2)
-    
+
     def __next__(self):
+        """Generator"""
         readaline = self.fd.readline
         while True:
             line = readaline()
@@ -75,11 +88,11 @@ class SsyndiSIPReader(object):
                     except IndexError:
                         raise StopIteration
                 elif (os.stat(self.filename).st_size < 10482000 or
-                      self.filename == self.ssyndi_logfile):
+                      self.filename == self.last_ssyndi()):
                       return None
                 else:
                     self.fd.close()
-                    self.filename = self.ssyndi_logfile
+                    self.filename = self.last_ssyndi()
                 self.fd = open(self.filename)
                 readaline = self.fd.readline
             elif "SIP MSG AT CALL CONTROL" in line:
@@ -92,58 +105,70 @@ class SsyndiSIPReader(object):
                 d["sipmsg"] = "".join(lines[1:-1])
                 d["proto"] = self.get_proto(d["sipmsg"])
                 return d
-    
+
     def __iter__(self):
         return self
-    
+
     def next(self):
         return self.__next__()
-    
-    @property
-    def ssyndi_logfile(self):
-        """
-        Evaluates to the latest SSYNDI log by file name.
-        """
+
+    def last_ssyndi(self):
+        """str: Returns the last SSYNDI log file by file name."""
         return max(x for x in glob(self.ssyndi_glob))
-    
+
     @property
     def progress(self):
-        """
-        Returns the percentage of processed logfiles if they were provided.
-        """
-        if not self.total_logfiles:
+        """int: Returns the percentage of processed input logfiles."""
+        if self.total_logfiles > 0:
             return int(100-(len(self.logfiles)/float(self.total_logfiles)*100))
         return 100
-    
+
     @memoize
     def splitaddr(self, line):
-        """
-        Parses the line containing host port info and returns them in a dict.
-        The returned value is cached by the the memoize function.
+        """Parses line argument which contains the source and destination
+        host IP address and transport protocol port numbers. To speed up
+        processing @memoize caches previous responses.
+
+        Args:
+            line (str): log line containing IP address and port info
+
+        Returns:
+            dict: {"srcip": <str srcip>, "srcport": <str srcport>,
+                   "dstip": <str dstip>, "dstport": <str dstport>}
         """
         keys = ("srcip", "srcport", "dstip", "dstport")
-        pattern = "IP:([a-fx0-9.]*):(\d+) --> ([a-fx0-9.]*):(\d+)"
-        m = re.search(pattern, line)
+        m = self.reIPs.search(line)
         try:
             d = dict((k,v) for k,v in zip(keys, m.groups()))
         except:
             return dict((k, None) for k in keys)
+
         if "x" in line:
             d["srcip"] = self.hextoip(d["srcip"])
             d["dstip"] = self.hextoip(d["dstip"])
         return d
-    
+
     @staticmethod
     def hextoip(hexip):
-        """
-        Converts the old hex format IP address to decimal.
+        """Converts IPv4 address from old hex to decimal format.
+
+        Args:
+            hexip (str): IPv4 address in old hex format
+
+        Returns:
+            str: IPv4 address in decimal format (xxx.xxx.xxx.xxx) 
         """
         return ".".join(str(int(x, 16)) for x in wrap(hexip[2:].zfill(8), 2))
-    
+
     @staticmethod
     def get_proto(sipmsg):
-        """
-        Returns the protocol type from the first Via header.
+        """Extracts protocol type from the top most Via header.
+
+        Args:
+            sipmsg (str): SIP message body
+
+        Returns:
+            str: Transport protocol type (UDP, TCP or TLS)
         """
         start = sipmsg.find("Via:")
         if start == -1:
@@ -155,29 +180,55 @@ class SsyndiSIPReader(object):
         else:
             start += 13
         return sipmsg[start:start+3].upper()
-    
+
     @staticmethod
     def strptime(s):
+        """Converts SSYNDI timestamp to datetime object.
+
+        Note:
+            This is 6 times faster than datetime.strptime()
+
+        Args:
+            s (str): SSYNDI timestamp
+ 
+        Returns:
+            datetime obj: datetime object
         """
-        Returns a datetime object from an ASBCE's timestamp string.
-        This is 6 times faster than the datetime.strptime() method.
-        """
-        return datetime(int(s[6:10]),  int(s[0:2]),   int(s[3:5]),
-                        int(s[11:13]), int(s[14:16]), int(s[17:19]),
-                        int(s[20:26]))
+        return datetime(int(s[6:10]), int(s[0:2]), int(s[3:5]), int(s[11:13]),
+                        int(s[14:16]), int(s[17:19]), int(s[20:26]))
 
 
 class TracesbcSIPReader(object):
+    """Generator class which parses tracesbc_sip log files and yields the
+    SIP message body with corresponding host IP addresses, ports, message
+    direction and timestamp in a dictionary.
     """
-    Generator class to extract SIP messages from tracesbc_sip logs.
-    """
-    
     LOGDIR = "/archive/log/tracesbc/tracesbc_sip"
-    TRACESBC_GLOB = "tracesbc_sip_[1-9][0-9][0-9]*"
+    TRACESBCSIP_GLOB = "tracesbc_sip_[1-9][0-9][0-9]*"
+    ADDRLINE = "(IN|OUT): ([0-9.]*):(\d+) --> ([0-9.]*):(\d+) \((\D+)\)" 
     
     def __init__(self, logfiles=None, logdir=None):
+     """Initializes a TracesbcSIPReader instance.
+
+        Args:
+            logfiles (list(str), optional): a collection of tracesbc_sip
+                log files to parse, if not provided it starts reading the
+                latest tracesbc_sip log in LOGDIR and keep doing it so
+                when the log file rotates
+            logdir (str): path to directory if tracesbc_sip logs are not
+                under the default LOGDIR folder
+
+        Returns:
+            obj (TracesbcSIPReader): a TracesbcSIPReader class instance
+
+        Raises:
+            StopIteration: when logfiles is not None and reached the end
+                of the last logfile
+        """
         self.logdir = logdir or self.LOGDIR
-        self.tracesbc_glob = os.path.join(self.LOGDIR, self.TRACESBC_GLOB)
+        self.tracesbc_glob = os.path.join(self.logdir, self.TRACESBCSIP_GLOB)
+        self.reIPs = re.compile(self.ADDRLINE)
+
         if logfiles:
             self.logfiles = logfiles
             self.total_logfiles = len(logfiles)
@@ -188,7 +239,7 @@ class TracesbcSIPReader(object):
             self.fd = self.zopen(self.filename)
         else:
             self.total_logfiles = 0
-            self.filename = self.tracesbc_sip_logfile
+            self.filename = self.last_tracesbc_sip()
             self.fd = self.zopen(self.filename)
             self.fd.seek(0, 2)
     
@@ -205,7 +256,7 @@ class TracesbcSIPReader(object):
                         raise StopIteration
                 elif not os.path.exists(self.filename):
                     self.fd.close()
-                    self.filename = self.tracesbc_sip_logfile
+                    self.filename = self.last_tracesbc_sip()
                 else:
                     return None
                 self.fd = self.zopen(self.filename)
@@ -225,32 +276,34 @@ class TracesbcSIPReader(object):
     def next(self):
         return self.__next__()
     
-    @property
-    def tracesbc_sip_logfile(self):
-        """
-        Evaluates to the latest tracesbc_sip log file by file name.
-        """
+    def last_tracesbc_sip(self):
+        """str: Returns the last tracesbc_sip log file."""
         return max((x for x in glob(self.tracesbc_glob)))
     
     @property
     def progress(self):
-        """
-        Returns the percentage of processed logfiles if they were provided.
-        """
+        """int: Returns the percentage of processed logfiles."""
         if self.total_logfiles:
-            return int(100-(len(self.logfiles)/float(self.total_logfiles)*100))
+            return int(100 - (len(self.logfiles) / float(self.total_logfiles) * 100))
         return 100
     
     @staticmethod
     @memoize
     def splitaddr(line):
-        """
-        Parses the line containing host port info and returns them in a dict.
-        The returned value is cached by the the memoize function.
+        """Parses line argument which contains the source and destination
+        host IP address, transport port numbers, protocol type and message
+        direction. To speed up processing @memoize caches previous responses.
+
+        Args:
+            line (str): log line containing IP address and port info
+
+        Returns:
+            dict: {"direction": <str direction>, "srcip": <str srcip>,
+                   "srcport": <str srcport>, "dstip": <str dstip>, 
+                   "dstport": <str dstport>, "proto": <str proto>}
         """
         keys = ("direction", "srcip", "srcport", "dstip", "dstport", "proto")
-        pattern = "(IN|OUT): ([0-9.]*):(\d+) --> ([0-9.]*):(\d+) \((\D+)\)"
-        m = re.search(pattern, line)
+        m = re.search(re.IPs, line)
         try:
             return dict((k,v) for k,v in zip(keys, m.groups()))
         except:
@@ -258,18 +311,29 @@ class TracesbcSIPReader(object):
     
     @staticmethod
     def strptime(s):
+        """Converts SSYNDI timestamp to datetime object.
+
+        Note:
+            This is 6 times faster than datetime.strptime()
+
+        Args:
+            s (str): SSYNDI timestamp
+ 
+        Returns:
+            datetime obj: datetime object
         """
-        Returns a datetime object from an ASBCE's timestamp string.
-        This is 6 times faster than the datetime.strptime() method.
-        """
-        return datetime(int(s[6:10]),  int(s[0:2]),   int(s[3:5]),
-                        int(s[11:13]), int(s[14:16]), int(s[17:19]),
-                        int(s[20:26]))
-    
+        return datetime(int(s[6:10]), int(s[0:2]), int(s[3:5]), int(s[11:13]),
+                        int(s[14:16]), int(s[17:19]), int(s[20:26]))
+
     @staticmethod
     def zopen(filename):
-        """
-        Returns the file handler for any possible tracesbc_sip file types.
+        """Return file handle depending on file extension type:
+        
+        Args:
+            filename (str): name of the logfile including path
+        
+        Returns:
+            obj: file handler
         """
         if filename.endswith(".gz"):
             return gzip.open(filename)
@@ -277,7 +341,6 @@ class TracesbcSIPReader(object):
             return bz2.BZ2File(filename)
         else:
             return open(filename)
-
 
 def get_interface_addresses():
     try:
