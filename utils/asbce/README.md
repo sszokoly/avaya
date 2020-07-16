@@ -120,6 +120,6 @@ for capture calls.
 *Note: the current version works on ASBCE version 6.3, 7.0, 7.1 only. Work is in progress to
 refactor, redesign and update this tool for newer ASBCE releases.
 
-![alt text](./pycapSBC.jpg?raw=true "Dashboard")
+![alt text](./images/pycapSBC.jpg?raw=true "Dashboard")
 
-![alt text](./pycapSBC2.jpg?raw=true "RTP stats")
+![alt text](./images/pycapSBC2.jpg?raw=true "RTP stats")
