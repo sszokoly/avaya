@@ -115,7 +115,7 @@ VoIP resource information of the caller and callee side in addition to other det
 simple button press it starts capturing the RTP and RTCP packets for a selected call or right
 away when a call gets established for up to 2 (by default) simultaneous calls. It can also
 show the RTP statistics, RTCP summary and any captured RFC2833 telephony events (DTMF payload)
-for capture calls.
+for captured calls.
 
 *Note: the current version works on ASBCE version 6.3, 7.0, 7.1 only. Work is in progress to
 refactor, redesign and update this tool for newer ASBCE releases.
