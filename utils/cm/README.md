@@ -3,16 +3,17 @@
 This script is supposed to be run in crontab and backs up the ecs logs files of Avaya Communication Manager
 to a desired destination folder. The Avaya Communication Manager by default retains the last 1000 ecs log files.
 A new ecs log file is created when the size of the file reaches 1MByte or every seconds. In a busy system when
-MST trace is configured so that it generated and writes out lot of data to the ecs log files the worst case scenario
-is that the system keeps only the last 1000 seconds worth of data which is often not enough. To keep a copy of a larger
-set of ecs log files configure and use this script. There is always a partition on the system where plenty of 
-disk space is available. You should edit this file with the desired parameters then add it to crontab (crontab -e)
-to run it every 10 mins or less if need to, for example in crontab:
+MST trace is configured so that it generates lot of data keeping last 1000 seconds worth of data only is often
+not enough. To keep a copy of a larger set of ecs log files use this script. There is always a partition on the
+system where plenty of disk space is available. Nowadays it is the /var/web/ partition. You should edit this
+file with the desired parameters then add it to crontab (crontab -e) to run it every X mins. For example to run
+it every 10mins add this to crotab:
 
 ### Example ###
 ```
 */10 * * * * /usr/bin/python /var/home/admin/backup_ecs.py 
 ```
+*Note: "/usr/bin/python" may be "/bin/python" on your CM version.
 
 ### Parameters ###
 
