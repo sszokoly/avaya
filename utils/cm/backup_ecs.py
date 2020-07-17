@@ -7,9 +7,9 @@ import shutil
 import sys
 
 SRCDIR='/var/log/ecs'
-DSTDIR='/var/home/ftp/pub/ecsbkp'
+DSTDIR='/var/web'
 FILES='20*'
-MAXUSE=90
+MAXUSE=80
 GZIP=1
 RATIO=4
 DEBUG=0
